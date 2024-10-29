@@ -1,6 +1,6 @@
 {
   "name": "contentstack-implementation-guide-nuxt-personalize",
-  "private": true,
+  "private": false,
   "version": "0.0.0",
   "type": "module",
   "repository": {
