@@ -1,36 +1,29 @@
-import Personalize from '@contentstack/personalize-edge-sdk';
-import { toWebRequest, setCookie } from 'h3';
-
-function isValidJSON(str: any) {
-  try {
-    JSON.parse(str);
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
+import Personalize from '@contentstack/personalize-edge-sdk'
+import { toWebRequest, setCookie, defineEventHandler } from 'h3'
+import { useRuntimeConfig } from '#imports'
 
 export default defineEventHandler(async (event) => {
-  // convert H3Event to standard Request
-  const request = toWebRequest(event);
-
+  // get options
   const {
     p13nProjectUid,
     region
   } = useRuntimeConfig().public;
 
-  const projectUid = p13nProjectUid;
   const edgeApiUrl = region === 'EU' ? 'https://eu-personalize-edge.contentstack.com' : 'https://personalize-edge.contentstack.com';
 
-  Personalize.setEdgeApiUrl(edgeApiUrl);
+  // convert H3Event to standard Request
+  const request = toWebRequest(event)
+
+  Personalize.setEdgeApiUrl(edgeApiUrl)
   // Initialize Personalize with converted Request
-  await Personalize.init(projectUid, { request });
+  p13nProjectUid && await Personalize.init(p13nProjectUid, { request });
 
   // figure out variants
   const variantParam = Personalize.getVariantParam();
 
   // create variant aliases that the SDK can understand
   const variantAlias = Personalize.variantParamToVariantAliases(variantParam).join(",");
+
   // Save variant aliases in request context for later use
   // See ~/plugins/personalize.ts to learn how `variantAlias` is added to 
   // the context so the client can also read it.
@@ -47,18 +40,30 @@ export default defineEventHandler(async (event) => {
   // Loop over the cookies array and parse them
   cookies.forEach(cookie => {
     const [nameValue, ...options] = cookie.split('; ')
-    const [name, value] = nameValue.split('=')
 
-    const cookieOptions: Record<string, string | number> = {}
-    options.forEach(option => {
-      const [key, val] = option.split('=')
-      cookieOptions[key.toLowerCase()] = key === 'Max-Age' ? parseInt(val) : val
-    })
+    if (nameValue) {
+      const [name, value] = nameValue.split('=')
 
-    // do not encodeURIComponent the cookie
-    cookieOptions.encode = ((v: string | number) => v) as unknown as string | number;
+      if (!name || !value) {
+        return false
+      }
 
-    // add the extracted cookies to the real Response in Nuxt
-    setCookie(event, name, value, cookieOptions)
+      const cookieOptions: Record<string, string | number | undefined> = {}
+      options.forEach(option => {
+        const [key, val] = option.split('=')
+
+        if (!key || !val) {
+          return false
+        }
+
+        cookieOptions[key.toLowerCase()] = key === 'Max-Age' ? parseInt(val) : val
+      })
+
+      // do not encodeURIComponent the cookie
+      cookieOptions.encode = ((v: string | number) => v) as unknown as string | number;
+
+      // add the extracted cookies to the real Response in Nuxt
+      setCookie(event, name, value, cookieOptions)
+    }
   })
 });

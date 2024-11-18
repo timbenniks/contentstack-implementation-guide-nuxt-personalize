@@ -21,7 +21,7 @@ export default defineNuxtConfig({
       environment: process.env.NUXT_CONTENTSTACK_ENVIRONMENT,
       preview: process.env.NUXT_CONTENTSTACK_PREVIEW === "true",
       region: process.env.NUXT_CONTENTSTACK_REGION,
-      p13nProjectUid: process.env.NUXT_CONTENTSTACK_P13N_PROJECT_UID
+      p13nProjectUid: process.env.NUXT_CONTENTSTACK_P13N_PROJECT_ID
     },
   },
 })
