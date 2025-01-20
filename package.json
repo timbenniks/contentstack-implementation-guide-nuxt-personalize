@@ -1,7 +1,7 @@
 {
   "name": "contentstack-implementation-guide-nuxt-personalize",
   "private": false,
-  "version": "0.0.3",
+  "version": "0.0.4",
   "type": "module",
   "repository": {
     "type": "git",
@@ -19,11 +19,11 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
-    "@contentstack/delivery-sdk": "4.4.2",
-    "@contentstack/live-preview-utils": "3.0.1",
-    "@contentstack/personalize-edge-sdk": "^1.0.3",
-    "@nuxtjs/tailwindcss": "^6.12.2",
-    "nuxt": "^3.14.159",
+    "@contentstack/delivery-sdk": "4.4.5",
+    "@contentstack/live-preview-utils": "3.0.2",
+    "@contentstack/personalize-edge-sdk": "^1.0.4",
+    "@nuxtjs/tailwindcss": "^6.13.1",
+    "nuxt": "^3.15.2",
     "vue": "latest",
     "vue-router": "latest"
   }
