@@ -9,6 +9,10 @@ export default defineNuxtConfig({
 
   modules: ['@nuxtjs/tailwindcss'],
 
+  build: {
+    transpile: ['@timbenniks/contentstack-endpoints']
+  },
+
   runtimeConfig: {
     public: {
       apiKey: process.env.NUXT_CONTENTSTACK_API_KEY,

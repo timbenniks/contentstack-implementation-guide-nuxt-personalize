@@ -1,8 +1,9 @@
-import contentstack, { Region } from "@contentstack/delivery-sdk"
+import contentstack from "@contentstack/delivery-sdk"
 import ContentstackLivePreview, { type IStackSdk } from "@contentstack/live-preview-utils";
 import Personalize from '@contentstack/personalize-edge-sdk';
+import { getContentstackEndpoints, getRegionForString } from "@timbenniks/contentstack-endpoints";
 
-export default defineNuxtPlugin((nuxtApp) => {
+export default defineNuxtPlugin(async (nuxtApp) => {
   const {
     apiKey,
     deliveryToken,
@@ -13,16 +14,19 @@ export default defineNuxtPlugin((nuxtApp) => {
     p13nProjectUid
   } = nuxtApp.$config.public;
 
+  const regionAsEnum = getRegionForString(region);
+  const endpoints = getContentstackEndpoints(regionAsEnum, true)
+
   // Set up stack for content delivery
   const stack = contentstack.stack({
     apiKey,
     deliveryToken,
     environment,
-    region: region === 'EU' ? Region.EU : Region.US,
+    region: regionAsEnum,
     live_preview: {
       enable: preview ? true : false,
       preview_token: previewToken,
-      host: region === 'EU' ? "eu-rest-preview.contentstack.com" : "rest-preview.contentstack.com",
+      host: endpoints.preview,
     }
   });
 
@@ -38,21 +42,20 @@ export default defineNuxtPlugin((nuxtApp) => {
         environment: environment,
       },
       clientUrlParams: {
-        host: region === "EU" ? "eu-app.contentstack.com" : "app.contentstack.com",
+        host: endpoints.application
       },
       editButton: {
         enable: true,
-      }
+        exclude: ["outsideLivePreviewPortal"]
+      },
     });
   }
 
   // Set up personalization
-  const projectUid = p13nProjectUid;
-  const edgeApiUrl = region === 'EU' ? 'https://eu-personalize-edge.contentstack.com' : 'https://personalize-edge.contentstack.com';
-
+  const edgeApiUrl = `https://${endpoints.personalizeEdge as string}`;
   Personalize.setEdgeApiUrl(edgeApiUrl);
-  Personalize.init(projectUid);
 
+  const personalizeSdk = await Personalize.init(p13nProjectUid);
   const variantAlias = useState('variantAlias', () => '');
 
   // only on server provide the p13n information from the request context
@@ -66,7 +69,7 @@ export default defineNuxtPlugin((nuxtApp) => {
       stack,
       preview,
       ContentstackLivePreview,
-      Personalize,
+      Personalize: personalizeSdk,
       variantAlias
     },
   };

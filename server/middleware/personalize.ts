@@ -1,6 +1,7 @@
 import Personalize from '@contentstack/personalize-edge-sdk'
 import { toWebRequest, setCookie, defineEventHandler } from 'h3'
 import { useRuntimeConfig } from '#imports'
+import { getContentstackEndpoints, getRegionForString } from "@timbenniks/contentstack-endpoints";
 
 export default defineEventHandler(async (event) => {
   // get options
@@ -9,20 +10,23 @@ export default defineEventHandler(async (event) => {
     region
   } = useRuntimeConfig().public;
 
-  const edgeApiUrl = region === 'EU' ? 'https://eu-personalize-edge.contentstack.com' : 'https://personalize-edge.contentstack.com';
+  const regionAsEnum = getRegionForString(region);
+  const endpoints = getContentstackEndpoints(regionAsEnum)
+  const edgeApiUrl = endpoints.personalizeEdge as string
 
   // convert H3Event to standard Request
   const request = toWebRequest(event)
 
   Personalize.setEdgeApiUrl(edgeApiUrl)
+
   // Initialize Personalize with converted Request
-  p13nProjectUid && await Personalize.init(p13nProjectUid, { request });
+  const personalizeSdk = await Personalize.init(p13nProjectUid, { request });
 
   // figure out variants
-  const variantParam = Personalize.getVariantParam();
+  const variantParam = personalizeSdk.getVariantParam();
 
   // create variant aliases that the SDK can understand
-  const variantAlias = Personalize.variantParamToVariantAliases(variantParam).join(",");
+  const variantAlias = personalizeSdk.variantParamToVariantAliases(variantParam).join(",");
 
   // Save variant aliases in request context for later use
   // See ~/plugins/personalize.ts to learn how `variantAlias` is added to 
@@ -32,7 +36,7 @@ export default defineEventHandler(async (event) => {
   // create an empty response so Personalize can add cookies to it 
   // so we can remember the user and the Personalize Manifest.
   const response = new Response();
-  await Personalize.addStateToResponse(response);
+  await personalizeSdk.addStateToResponse(response);
 
   // Extract the cookies from the fake Request
   const cookies = response.headers.getSetCookie()
